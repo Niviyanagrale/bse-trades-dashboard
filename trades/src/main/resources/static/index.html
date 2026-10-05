@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Trades Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 24px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+        th, td { border: 1px solid #ddd; padding: 6px 10px; text-align: left; }
+        th { background: #f3f3f3; position: sticky; top: 0; }
+        #status { margin-left: 12px; color: #BA3537; }
+    </style>
+</head>
+<body>
+<h2>Trades Dashboard</h2>
+<button id="pullBtn">Pull now</button>
+<span id="status"></span>
+<p id="count"></p>
+
+<table>
+    <thead>
+    <tr>
+        <th>Trade ID</th><th>Client</th><th>Symbol</th>
+        <th>Quantity</th><th>Price</th><th>Timestamp</th>
+    </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+</table>
+
+<script>
+    async function loadTrades() {
+        const res = await fetch('/api/trades');
+        if (!res.ok) {
+            document.getElementById('count').textContent =
+                'Error loading trades: HTTP ' + res.status;
+            return;
+        }
+        const trades = await res.json();
+        document.getElementById('count').textContent = trades.length + ' trades';
+        document.getElementById('rows').innerHTML = trades.map(t =>
+            `<tr>
+                <td>${t.tradeId}</td><td>${t.client}</td><td>${t.symbol}</td>
+                <td>${t.quantity}</td><td>${t.price}</td><td>${t.timestamp}</td>
+            </tr>`
+        ).join('');
+    }
+
+    document.getElementById('pullBtn').onclick = async () => {
+        await fetch('/pull', { method: 'POST' });
+        document.getElementById('status').textContent = 'Pull started...';
+    };
+
+    loadTrades();
+
+    const source = new EventSource('/api/stream');
+
+    source.addEventListener('trades-updated', () => {
+        document.getElementById('status').textContent = 'New trades arrived!';
+        loadTrades();
+    });
+
+    // If the connection drops and the browser reconnects,
+    // reload so nothing is missed.
+    source.onopen = () => loadTrades();
+</script>
+</body>
+</html>
