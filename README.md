@@ -19,7 +19,7 @@ Open http://localhost:8080/
 Pull duration is set in `src/main/resources/application.properties`:
 
 ```properties
-bse.delay-seconds=20     # use 900 for the real 15-minute pull
+bse.delay-seconds=20    
 ```
 
 ## How to use
